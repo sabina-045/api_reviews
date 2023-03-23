@@ -1,9 +1,47 @@
+from rest_framework import permissions
+from rest_framework import serializers
+from rest_framework import filters
 from django.shortcuts import get_object_or_404
+import datetime as dt
+from reviews.models import Category, Genre, Title, Title, Review
+from api.serializers import (
+    CategorySerializer, GenreSerializer, TitleSerializer,
+    ReviewSerializer, CommentSerializer
+)
+from api.permissions import ReadOnly
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny
+ 
 
-from .serializers import ReviewSerializer, CommentSerializer
-from reviews.models import Title, Review
+class GenreViewSet(ModelViewSet):
+"""Получение списка жанров произведений.
+Создание, редактирование, удаление отдельных объектов админом."""
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = [permissions.IsAdminUser|ReadOnly]
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('name', )
+
+
+class CategoryViewSet(ModelViewSet):
+"""Получение списка категорий.
+Создание, редактирование, удаление отдельных объектов админом."""
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAdminUser|ReadOnly]
+    lookup_field = 'slug'
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('name', )
+
+
+class TitleViewSet(ModelViewSet):
+"""Получение списка произведений.
+Получение, создание, редактирование,
+    удаление отдельной записи о произвед."""
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    permission_classes = [permissions.IsAdminUser|ReadOnly]
 
 
 class ReviewViewSet(ModelViewSet):

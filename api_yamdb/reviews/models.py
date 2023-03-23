@@ -4,12 +4,106 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 User = get_user_model()
 
+
+class Genre(models.Model):
+"""Класс жанров."""
+    name = models.CharField(
+        'Название категории',
+        blank=False,
+        null=False,
+        max_length=256,
+    )
+    slug = models.SlugField(
+        blank=False,
+        null=False,
+        unique=True,
+        verbose_name='URL',
+        max_length=50,
+    )
+    
+    def __str__(self) -> str:
+        return self.name
+
+
+class Category(models.Model):
+"""Класс категорий."""
+    name = models.CharField(
+        'Название категории',
+        blank=False,
+        null=True,
+        max_length=256,
+    )
+    slug = models.SlugField(
+        blank=False,
+        null=False,
+        unique=True,
+        verbose_name='URL',
+        max_length=50,
+    )
+    def __str__(self) -> str:
+        return self.name
+
+
 class Title(models.Model):
-    pass
+"""Класс произведений."""
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        blank=False,
+        null=True,
+        related_name='category',
+        verbose_name='Категория произведения',
+    )
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.SET_NULL,
+        blank=False,
+        null=True,
+        related_name='genre',
+        verbose_name='Жанр произведения',
+    )
+    name = models.CharField(
+        'Название произведения',
+        max_length=256,
+        blank=False,
+        null=False,
+    )
+    year = models.IntegerField(
+        'Год произведения',
+        blank=False,
+        null=False,
+    )
+    description = models.CharField(
+        'Описание произведения',
+        blank=True,
+        null=True,
+        max_length=256
+    )
+    rating = models.IntegerField(
+        'Оценка произведения',
+        null=True,
+        default=0,
+    )
+
+    def __str__(self) -> str:
+        return self.name
 
 
-class User(models.Model):
-    pass
+class GenreTitle(models.Model):
+"""Класс связ. жанры и произв."""
+    title= models.ForeignKey(
+        Title,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+
+    def __str__(self) -> str:
+        return f'Произведение: {self.title}, жанр: {self.genre}'
 
 
 class Review(models.Model):
