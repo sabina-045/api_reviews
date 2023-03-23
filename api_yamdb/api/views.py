@@ -14,8 +14,8 @@ from rest_framework.permissions import AllowAny
  
 
 class GenreViewSet(ModelViewSet):
-"""Получение списка жанров произведений.
-Создание, редактирование, удаление отдельных объектов админом."""
+    """Получение списка жанров произведений.
+    Создание, редактирование, удаление отдельных объектов админом."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [permissions.IsAdminUser|ReadOnly]
@@ -25,8 +25,8 @@ class GenreViewSet(ModelViewSet):
 
 
 class CategoryViewSet(ModelViewSet):
-"""Получение списка категорий.
-Создание, редактирование, удаление отдельных объектов админом."""
+    """Получение списка категорий.
+    Создание, редактирование, удаление отдельных объектов админом."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAdminUser|ReadOnly]
@@ -36,8 +36,8 @@ class CategoryViewSet(ModelViewSet):
 
 
 class TitleViewSet(ModelViewSet):
-"""Получение списка произведений.
-Получение, создание, редактирование,
+    """Получение списка произведений.
+    Получение, создание, редактирование,
     удаление отдельной записи о произвед."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
