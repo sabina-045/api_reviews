@@ -1,7 +1,12 @@
 from django.db import models
+from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+User = get_user_model()
 
 
 class Genre(models.Model):
+"""Класс жанров."""
     name = models.CharField(
         'Название категории',
         blank=False,
@@ -21,6 +26,7 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
+"""Класс категорий."""
     name = models.CharField(
         'Название категории',
         blank=False,
@@ -39,6 +45,7 @@ class Category(models.Model):
 
 
 class Title(models.Model):
+"""Класс произведений."""
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -83,6 +90,7 @@ class Title(models.Model):
 
 
 class GenreTitle(models.Model):
+"""Класс связ. жанры и произв."""
     title= models.ForeignKey(
         Title,
         on_delete=models.SET_NULL,
@@ -96,3 +104,34 @@ class GenreTitle(models.Model):
 
     def __str__(self) -> str:
         return f'Произведение: {self.title}, жанр: {self.genre}'
+
+
+class Review(models.Model):
+    """Класс отзывов к произведению."""
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviews')
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='reviews')
+    score = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1), MaxValueValidator(10)])
+    text = models.TextField()
+    pub_date = models.DateTimeField(
+        'Дата добавления', auto_now_add=True, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='author_title'
+            )
+        ]
+
+
+class Comment(models.Model):
+    """Класс комментариев к отзыву."""
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments')
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comments')
+    text = models.TextField()
+    pub_date = models.DateTimeField(
+        'Дата добавления', auto_now_add=True, db_index=True)
