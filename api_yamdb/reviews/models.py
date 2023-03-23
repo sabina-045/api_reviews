@@ -6,7 +6,7 @@ User = get_user_model()
 
 
 class Genre(models.Model):
-"""Класс жанров."""
+    """Класс жанров."""
     name = models.CharField(
         'Название категории',
         blank=False,
@@ -20,13 +20,13 @@ class Genre(models.Model):
         verbose_name='URL',
         max_length=50,
     )
-    
+
     def __str__(self) -> str:
         return self.name
 
 
 class Category(models.Model):
-"""Класс категорий."""
+    """Класс категорий."""
     name = models.CharField(
         'Название категории',
         blank=False,
@@ -45,7 +45,7 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-"""Класс произведений."""
+    """Класс произведений."""
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -90,7 +90,7 @@ class Title(models.Model):
 
 
 class GenreTitle(models.Model):
-"""Класс связ. жанры и произв."""
+    """Класс связ. жанры и произв."""
     title= models.ForeignKey(
         Title,
         on_delete=models.SET_NULL,
