@@ -2,12 +2,29 @@ import datetime as dt
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.relations import SlugRelatedField
+from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Genre, Category, Title, Review, Comment
+from users.models import CustomUser
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор кастомного юзера"""
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
+        read_only_fields = ['password',]
+        validators = [
+            UniqueTogetherValidator(
+                queryset=CustomUser.objects.all(),
+                fields=['username', 'email']
+            )
+        ]
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = Genre
         fields = ('name', 'slug',)
@@ -15,7 +32,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = Category
         fields = ('name', 'slug',)
@@ -23,7 +40,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = Title
         fields = '__all__'

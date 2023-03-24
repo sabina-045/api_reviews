@@ -1,16 +1,57 @@
 from rest_framework import permissions
 from rest_framework import serializers
 from rest_framework import filters
+from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 import datetime as dt
+from rest_framework import status
 from reviews.models import Category, Genre, Title, Title, Review
 from api.serializers import (
     CategorySerializer, GenreSerializer, TitleSerializer,
-    ReviewSerializer, CommentSerializer
+    ReviewSerializer, CommentSerializer, UserSerializer
 )
-from api.permissions import ReadOnly
+from api.permissions import ReadOnly, AdminOnly
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from users.models import CustomUser
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
+
+
+class UserViewSet(ModelViewSet):
+    """CRUD for user."""
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, AdminOnly]
+    pagination_class = PageNumberPagination
+    # filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['username']
+    lookup_field = 'username'
+
+    def perform_create(self, serializer):
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=False,
+        methods=['get', 'put', 'patch'],
+        permission_classes=[IsAuthenticated]
+    )
+    def me(self, request):
+        """Дополнительный маршрут 'me'."""
+        user = request.user
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
+
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(role=user.role, partial=True)
+
+        return Response(serializer.data)
 
 
 class GenreViewSet(ModelViewSet):

@@ -36,7 +36,7 @@ class CustomUser(AbstractUser):
     )
     bio = models.CharField(
         verbose_name='Биография',
-        blank=True
+        blank=True, max_length=250,
     )
     role = models.CharField(
         verbose_name='Роль',
@@ -48,7 +48,7 @@ class CustomUser(AbstractUser):
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['username']
+    # REQUIRED_FIELDS = ['username']
 
     objects = UserManager()
 
@@ -66,7 +66,7 @@ class CustomUser(AbstractUser):
     def is_admin(self):
         """Проверка. Пользователь 'admin'?"""
         return self.role == ADMIN
-    
+
 
     class Meta:
         verbose_name = 'Пользователь'
