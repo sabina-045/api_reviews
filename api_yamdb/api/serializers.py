@@ -36,7 +36,7 @@ class TokenSerializer(serializers.Serializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
+    
     class Meta:
         model = Genre
         fields = ('name', 'slug',)
@@ -44,7 +44,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
+    
     class Meta:
         model = Category
         fields = ('name', 'slug',)
@@ -52,23 +52,38 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-
+    genre = serializers.SlugRelatedField(
+        queryset = Genre.objects.all(),
+        many = True,
+        slug_field='slug',
+    )
+    category = serializers.SlugRelatedField(
+        queryset = Category.objects.all(),
+        many=False,
+        slug_field='slug',
+    )
     class Meta:
         model = Title
         fields = '__all__'
 
-    # Не проверял. Будет ли работать?
-    """
-    def create(self, validated_data):
-        year_now = dt.datetime.today().year
-        year_data = validated_data.get('year')
-        if year_data <= year_now:
-            return Title.objects.create(**validated_data)
-        else:
+    def validate(self, data):
+        year_now = dt.datetime.now().year
+        if data['year'] > year_now:
             raise serializers.ValidationError(
                 'Нельяз публиковать не вышедшие произведения'
             )
-    """
+        return data
+
+
+class TitleReadOnlySerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    # rating = serializers.IntegerField(
+    #     source='reviews__score__avg', read_only=True,
+    # )
+    class Meta:
+        model = Title
+        fields = '__all__'
 
 
 class ReviewSerializer(ModelSerializer):

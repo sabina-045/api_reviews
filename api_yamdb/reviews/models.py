@@ -8,7 +8,7 @@ User = get_user_model()
 class Genre(models.Model):
     """Класс жанров."""
     name = models.CharField(
-        'Название категории',
+        'Название жанра',
         blank=False,
         null=False,
         max_length=256,
@@ -46,22 +46,6 @@ class Category(models.Model):
 
 class Title(models.Model):
     """Класс произведений."""
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.SET_NULL,
-        blank=False,
-        null=True,
-        related_name='category',
-        verbose_name='Категория произведения',
-    )
-    genre = models.ForeignKey(
-        Genre,
-        on_delete=models.SET_NULL,
-        blank=False,
-        null=True,
-        related_name='genre',
-        verbose_name='Жанр произведения',
-    )
     name = models.CharField(
         'Название произведения',
         max_length=256,
@@ -73,16 +57,30 @@ class Title(models.Model):
         blank=False,
         null=False,
     )
-    description = models.CharField(
+    description = models.TextField(
         'Описание произведения',
         blank=True,
         null=True,
-        max_length=256
     )
     rating = models.IntegerField(
         'Оценка произведения',
         null=True,
-        default=0,
+        default=None,
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        blank=False,
+        null=True,
+        related_name='category',
+        verbose_name='Категория произведения',
+    )
+    genre = models.ManyToManyField(
+        Genre,
+        blank=False,
+        through='GenreTitle',
+        related_name='genre',
+        verbose_name='Жанр произведения',
     )
 
     def __str__(self) -> str:

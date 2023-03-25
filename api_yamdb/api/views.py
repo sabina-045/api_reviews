@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status, filters
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -12,7 +12,8 @@ from .permissions import (AuthorOrAuthenticatedOrReadOnly, ModeratorOnly,
                              ReadOrAdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
-                             TitleSerializer, UserSerializer)
+                             TitleSerializer, UserSerializer,
+                             TitleReadOnlySerializer)
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 
@@ -97,7 +98,7 @@ class GenreViewSet(ModelViewSet):
     Создание, редактирование, удаление отдельных объектов админом."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (ReadOrAdminOnly,)
+    permission_classes = [IsAdminUser|ReadOnly]
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
@@ -108,7 +109,7 @@ class CategoryViewSet(ModelViewSet):
     Создание, редактирование, удаление отдельных объектов админом."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (ReadOrAdminOnly,)
+    permission_classes = [IsAdminUser|ReadOnly]
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
@@ -116,11 +117,17 @@ class CategoryViewSet(ModelViewSet):
 
 class TitleViewSet(ModelViewSet):
     """Получение списка произведений.
-    Получение, создание, редактирование,
+    Создание, редактирование,
     удаление отдельной записи о произвед."""
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
-    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
+    # queryset = Title.objects.all().annotate(Avg('reviews__score'))
+    queryset = Title.objects.all()          # когда появятся рейтинги, <-- это поле убрать
+    serializer_class = TitleSerializer      # и раскоментить поле выше
+    permission_classes = [IsAdminUser|ReadOnly]
+
+    def get_serializer_class(self):
+        if self.action in ("retrieve", "list"):
+            return TitleReadOnlySerializer
+        return TitleSerializer
 
 
 class ReviewViewSet(ModelViewSet):
