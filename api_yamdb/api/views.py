@@ -1,28 +1,31 @@
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from rest_framework import permissions
 from rest_framework import serializers
 from rest_framework import filters
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 from django.shortcuts import get_object_or_404
 import datetime as dt
 from rest_framework import status
 from reviews.models import Category, Genre, Title, Title, Review
 from api.serializers import (
-    CategorySerializer, GenreSerializer, TitleSerializer,
+    CategorySerializer, GenreSerializer, TitleSerializer, TokenSerializer,
     ReviewSerializer, CommentSerializer, UserSerializer
 )
-from api.permissions import ReadOnly, AdminOnly
+from api.permissions import AdminOnly, ReadOnly
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from users.models import CustomUser
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 
 
 class UserViewSet(ModelViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, AdminOnly]
+    permission_classes = [AdminOnly]
     pagination_class = PageNumberPagination
     # filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['username']
@@ -52,6 +55,46 @@ class UserViewSet(ModelViewSet):
         serializer.save(role=user.role, partial=True)
 
         return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny, ])
+def send_confirmation_code(request):
+    """Отправка письма с кодом подтверждения."""
+    serializer = UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    user = get_object_or_404(
+        CustomUser,
+        username=serializer.validated_data["username"]
+    )
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        subject="YaMDb регистрация",
+        message=f"YaMDb код подтверждения: {confirmation_code}",
+        from_email=None,
+        recipient_list=[user.email],
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def get_jwt_token(request):
+    """Сравнить код подтвержденя и получить токен."""
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = get_object_or_404(
+        CustomUser,
+        username=serializer.validated_data["username"]
+    )
+
+    if default_token_generator.check_token(
+        user, serializer.validated_data["confirmation_code"]
+    ):
+        token = AccessToken.for_user(user)
+        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GenreViewSet(ModelViewSet):
