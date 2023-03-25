@@ -14,13 +14,25 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ['password',]
+        read_only_fields = ['password', 'role']
         validators = [
             UniqueTogetherValidator(
                 queryset=CustomUser.objects.all(),
                 fields=['username', 'email']
             )
         ]
+
+    def validate_username(self, value):
+        """Валидация юзернейма."""
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                f'Имя {value} не подходит.')
+        return value
+
+
+class TokenSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
 
 
 class GenreSerializer(serializers.ModelSerializer):

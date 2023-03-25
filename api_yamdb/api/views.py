@@ -52,6 +52,45 @@ class UserViewSet(ModelViewSet):
 
         return Response(serializer.data)
 
+@api_view(['POST'])
+@permission_classes([AllowAny, ])
+def send_confirmation_code(request):
+    """Отправка письма с кодом подтверждения."""
+    serializer = UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    user = get_object_or_404(
+        CustomUser,
+        username=serializer.validated_data["username"]
+    )
+    confirmation_code = default_token_generator.make_token(user)
+    send_mail(
+        subject="YaMDb регистрация",
+        message=f"YaMDb код подтверждения: {confirmation_code}",
+        from_email=None,
+        recipient_list=[user.email],
+    )
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def get_jwt_token(request):
+    """Сравнить код подтвержденя и получить токен."""
+    serializer = TokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = get_object_or_404(
+        CustomUser,
+        username=serializer.validated_data["username"]
+    )
+
+    if default_token_generator.check_token(
+        user, serializer.validated_data["confirmation_code"]
+    ):
+        token = AccessToken.for_user(user)
+        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class GenreViewSet(ModelViewSet):
     """Получение списка жанров произведений.
