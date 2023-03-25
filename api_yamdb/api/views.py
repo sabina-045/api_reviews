@@ -1,28 +1,27 @@
-from rest_framework import permissions
-from rest_framework import serializers
-from rest_framework import filters
-from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 import datetime as dt
-from rest_framework import status
-from reviews.models import Category, Genre, Title, Title, Review
-from api.serializers import (
-    CategorySerializer, GenreSerializer, TitleSerializer,
-    ReviewSerializer, CommentSerializer, UserSerializer
-)
-from api.permissions import ReadOnly, AdminOnly
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from users.models import CustomUser
-from rest_framework.pagination import PageNumberPagination
+from django.shortcuts import get_object_or_404
+
+from rest_framework import status, filters
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
+
+from .permissions import (AuthorOrAuthenticatedOrReadOnly, ModeratorOnly,
+                             ReadOrAdminOnly)
+from .serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, ReviewSerializer,
+                             TitleSerializer, UserSerializer)
+from reviews.models import Category, Genre, Review, Title
+from users.models import CustomUser
 
 
 class UserViewSet(ModelViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated, AdminOnly]
+    permission_classes = IsAuthenticated
     pagination_class = PageNumberPagination
     # filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['username']
@@ -37,7 +36,7 @@ class UserViewSet(ModelViewSet):
     @action(
         detail=False,
         methods=['get', 'put', 'patch'],
-        permission_classes=[IsAuthenticated]
+        permission_classes=IsAuthenticated
     )
     def me(self, request):
         """Дополнительный маршрут 'me'."""
@@ -59,7 +58,7 @@ class GenreViewSet(ModelViewSet):
     Создание, редактирование, удаление отдельных объектов админом."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [permissions.IsAdminUser|ReadOnly]
+    permission_classes = (ReadOrAdminOnly,)
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
@@ -70,7 +69,7 @@ class CategoryViewSet(ModelViewSet):
     Создание, редактирование, удаление отдельных объектов админом."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAdminUser|ReadOnly]
+    permission_classes = (ReadOrAdminOnly,)
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
@@ -82,7 +81,7 @@ class TitleViewSet(ModelViewSet):
     удаление отдельной записи о произвед."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = [permissions.IsAdminUser|ReadOnly]
+    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
 
 
 class ReviewViewSet(ModelViewSet):
@@ -90,14 +89,20 @@ class ReviewViewSet(ModelViewSet):
     Получение, создание, редактирование,
     удаление отдельного отзыва."""
     serializer_class = ReviewSerializer
-    # permission_classes =
+    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
 
     def get_permissions(self):
         """Разрешение анонимам получать информацию
-        об отдельном объекте."""
+        об отдельном объекте. Разрешение модератору
+        удалять или редактировать отд. объект."""
         if self.action == 'retrieve':
 
             return (AllowAny(),)
+
+        if self.request.user.is_moderator and self.action == (
+            'update' or 'partial_update' or 'destroy'
+        ):
+            return (ModeratorOnly(),)
 
         return super().get_permissions()
 
@@ -118,14 +123,20 @@ class CommentViewSet(ModelViewSet):
     Получение, создание, редактирование,
     удаление отдельного комментария."""
     serializer_class = CommentSerializer
-    # permission_classes =
+    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
 
     def get_permissions(self):
         """Разрешение анонимам получать информацию
-        об отдельном объекте."""
+        об отдельном объекте.Разрешение модератору
+        удалять или редактировать отд. объект."""
         if self.action == 'retrieve':
 
             return (AllowAny(),)
+
+        if self.request.user.is_moderator and self.action == (
+            'update' or 'partial_update' or 'destroy'
+        ):
+            return (ModeratorOnly(),)
 
         return super().get_permissions()
 
