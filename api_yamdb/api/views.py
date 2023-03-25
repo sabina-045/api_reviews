@@ -1,19 +1,27 @@
 import datetime as dt
 from django.shortcuts import get_object_or_404
-
+from django.db.models import Avg
 from rest_framework import status, filters
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+# ниже добавил импорты для User
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.decorators import api_view, permission_classes
+#
 
-from .permissions import (AuthorOrAuthenticatedOrReadOnly, ModeratorOnly,
-                             ReadOrAdminOnly)
-from .serializers import (CategorySerializer, CommentSerializer,
-                             GenreSerializer, ReviewSerializer,
-                             TitleSerializer, UserSerializer,
-                             TitleReadOnlySerializer)
+from .permissions import (
+    AuthorOrAuthenticatedOrReadOnly, ModeratorOnly,
+    ReadOrAdminOnly, ReadOnly)
+from .serializers import (
+    CategorySerializer, CommentSerializer,
+    GenreSerializer, ReviewSerializer,
+    TitleSerializer, UserSerializer,
+    TitleReadOnlySerializer, TokenSerializer)
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 
@@ -74,7 +82,7 @@ def send_confirmation_code(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-@permission_classes([permissions.AllowAny])
+@permission_classes([AllowAny])
 def get_jwt_token(request):
     """Сравнить код подтвержденя и получить токен."""
     serializer = TokenSerializer(data=request.data)
@@ -119,9 +127,9 @@ class TitleViewSet(ModelViewSet):
     """Получение списка произведений.
     Создание, редактирование,
     удаление отдельной записи о произвед."""
-    # queryset = Title.objects.all().annotate(Avg('reviews__score'))
-    queryset = Title.objects.all()          # когда появятся рейтинги, <-- это поле убрать
-    serializer_class = TitleSerializer      # и раскоментить поле выше
+    queryset = Title.objects.all().annotate(Avg('reviews__score'))
+    # queryset = Title.objects.all()
+    serializer_class = TitleSerializer
     permission_classes = [IsAdminUser|ReadOnly]
 
     def get_serializer_class(self):
