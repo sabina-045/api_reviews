@@ -2,6 +2,7 @@ import datetime as dt
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters
@@ -122,7 +123,7 @@ class TitleViewSet(ModelViewSet):
     """Получение списка произведений.
     Получение, создание, редактирование,
     удаление отдельной записи о произвед."""
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(Avg('reviews__score'))
     serializer_class = TitleSerializer
     permission_classes = (ReadOrAdminOnly,)
 

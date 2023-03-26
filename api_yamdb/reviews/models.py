@@ -54,11 +54,10 @@ class Title(models.Model):
         related_name='category',
         verbose_name='Категория произведения',
     )
-    genre = models.ForeignKey(
+    genre = models.ManyToManyField(
         Genre,
-        on_delete=models.SET_NULL,
         blank=False,
-        null=True,
+        through='GenreTitle',
         related_name='genre',
         verbose_name='Жанр произведения',
     )

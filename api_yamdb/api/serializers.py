@@ -52,24 +52,29 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    genre = serializers.SlugRelatedField(
+        queryset = Genre.objects.all(),
+        many = True,
+        slug_field='slug',
+    )
+    category = serializers.SlugRelatedField(
+        queryset = Category.objects.all(),
+        many=False,
+        slug_field='slug',
+    )
 
     class Meta:
         model = Title
         fields = '__all__'
         read_only_fields = ('rating',)
 
-    # Не проверял. Будет ли работать?
-    """
-    def create(self, validated_data):
-        year_now = dt.datetime.today().year
-        year_data = validated_data.get('year')
-        if year_data <= year_now:
-            return Title.objects.create(**validated_data)
-        else:
+    def validate(self, data):
+        """Проверка поля даты произведения."""
+        year_now = dt.datetime.now().year
+        if data['year'] > year_now:
             raise serializers.ValidationError(
-                'Нельяз публиковать не вышедшие произведения'
+                'Нельзя публиковать дату из будущего'
             )
-    """
 
 
 class ReviewSerializer(ModelSerializer):
