@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from reviews.models import Title, Category, Genre, GenreTitle
+from users.models import CustomUser
 
 
 class GenreTitleInline(admin.TabularInline):
@@ -29,3 +30,4 @@ admin.site.register(Title, TitleAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(GenreTitle)
+admin.site.register(CustomUser)
