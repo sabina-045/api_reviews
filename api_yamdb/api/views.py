@@ -15,8 +15,8 @@ from rest_framework.viewsets import ModelViewSet
 from .permissions import (AuthorOrAuthenticatedOrReadOnly, StaffOnly,
                              ReadOrAdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
-                             GenreSerializer, ReviewSerializer,
-                             TitleSerializer, UserSerializer, TokenSerializer)
+    GenreSerializer, ReviewSerializer, TitleReadOnlySerializer,
+    TitleSerializer, UserSerializer, TokenSerializer)
 from .mixins import ListCreateDestroyViewSet
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
@@ -102,7 +102,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
     Создание, удаление отдельных объектов админом."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (ReadOrAdminOnly,)
+    permission_classes = (ReadOrAdminOnly, )
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
@@ -113,7 +113,7 @@ class CategoryViewSet(ListCreateDestroyViewSet):
     Создание, удаление отдельных объектов админом."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (ReadOrAdminOnly,)
+    permission_classes = (ReadOrAdminOnly, )
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
@@ -121,20 +121,16 @@ class CategoryViewSet(ListCreateDestroyViewSet):
 
 class TitleViewSet(ModelViewSet):
     """Получение списка произведений.
-    Получение, создание, редактирование,
+    Создание, редактирование,
     удаление отдельной записи о произвед."""
     queryset = Title.objects.all().annotate(Avg('reviews__score'))
     serializer_class = TitleSerializer
-    permission_classes = (ReadOrAdminOnly,)
+    permission_classes = [ReadOrAdminOnly, ]
 
-    def get_permissions(self):
-        """Разрешение анонимам получать информацию
-        об отдельном объекте."""
-        if self.action == 'retrieve':
-
-            return (AllowAny(),)
-
-        return super().get_permissions()
+    def get_serializer_class(self):
+        if self.action in ("retrieve", "list"):
+            return TitleReadOnlySerializer
+        return TitleSerializer
 
 
 class ReviewViewSet(ModelViewSet):
