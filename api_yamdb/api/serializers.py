@@ -62,11 +62,13 @@ class TitleSerializer(serializers.ModelSerializer):
         many=False,
         slug_field='slug',
     )
+    rating = serializers.IntegerField(
+        source='reviews__score__avg', read_only=True,
+    )
 
     class Meta:
         model = Title
         fields = '__all__'
-        read_only_fields = ('rating',)
 
     def validate(self, data):
         """Проверка поля даты произведения."""

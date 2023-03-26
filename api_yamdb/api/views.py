@@ -22,11 +22,11 @@ from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 
 
-class UserViewSet(ModelViewSet):
+class UserViewSet(ListCreateDestroyViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = IsAdminUser
+    permission_classes = (IsAdminUser,)
     pagination_class = PageNumberPagination
     # filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['username']
@@ -41,7 +41,7 @@ class UserViewSet(ModelViewSet):
     @action(
         detail=False,
         methods=['get', 'put', 'patch'],
-        permission_classes=IsAuthenticated
+        permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
         """Дополнительный маршрут 'me'."""
