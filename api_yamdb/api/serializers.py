@@ -56,6 +56,7 @@ class TitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = '__all__'
+        read_only_fields = ('rating',)
 
     # Не проверял. Будет ли работать?
     """
@@ -79,7 +80,7 @@ class ReviewSerializer(ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
-        read_only_fields = ('pub_date',)
+        read_only_fields = ('pub_date', 'title',)
 
 
 class CommentSerializer(ModelSerializer):
@@ -90,4 +91,4 @@ class CommentSerializer(ModelSerializer):
     class Meta:
         model = Comment
         fields = ('__all__')
-        read_only_fields = ('pub_date',)
+        read_only_fields = ('pub_date', 'review',)

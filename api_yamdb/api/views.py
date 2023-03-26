@@ -1,18 +1,22 @@
 import datetime as dt
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .permissions import (AuthorOrAuthenticatedOrReadOnly, ModeratorOnly,
+from .permissions import (AuthorOrAuthenticatedOrReadOnly, StaffOnly,
                              ReadOrAdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
-                             TitleSerializer, UserSerializer)
+                             TitleSerializer, UserSerializer, TokenSerializer)
+from .mixins import ListCreateDestroyViewSet
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 
@@ -21,7 +25,7 @@ class UserViewSet(ModelViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = IsAuthenticated
+    permission_classes = IsAdminUser
     pagination_class = PageNumberPagination
     # filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['username']
@@ -73,7 +77,7 @@ def send_confirmation_code(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
-@permission_classes([permissions.AllowAny])
+@permission_classes([AllowAny])
 def get_jwt_token(request):
     """Сравнить код подтвержденя и получить токен."""
     serializer = TokenSerializer(data=request.data)
@@ -92,9 +96,9 @@ def get_jwt_token(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenreViewSet(ModelViewSet):
+class GenreViewSet(ListCreateDestroyViewSet):
     """Получение списка жанров произведений.
-    Создание, редактирование, удаление отдельных объектов админом."""
+    Создание, удаление отдельных объектов админом."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (ReadOrAdminOnly,)
@@ -103,9 +107,9 @@ class GenreViewSet(ModelViewSet):
     search_fields = ('name', )
 
 
-class CategoryViewSet(ModelViewSet):
+class CategoryViewSet(ListCreateDestroyViewSet):
     """Получение списка категорий.
-    Создание, редактирование, удаление отдельных объектов админом."""
+    Создание, удаление отдельных объектов админом."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (ReadOrAdminOnly,)
@@ -120,7 +124,16 @@ class TitleViewSet(ModelViewSet):
     удаление отдельной записи о произвед."""
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
+    permission_classes = (ReadOrAdminOnly,)
+
+    def get_permissions(self):
+        """Разрешение анонимам получать информацию
+        об отдельном объекте."""
+        if self.action == 'retrieve':
+
+            return (AllowAny(),)
+
+        return super().get_permissions()
 
 
 class ReviewViewSet(ModelViewSet):
@@ -132,16 +145,16 @@ class ReviewViewSet(ModelViewSet):
 
     def get_permissions(self):
         """Разрешение анонимам получать информацию
-        об отдельном объекте. Разрешение модератору
+        об отдельном объекте. Разрешение модератору или админу
         удалять или редактировать отд. объект."""
         if self.action == 'retrieve':
 
             return (AllowAny(),)
 
-        if self.request.user.is_moderator and self.action == (
+        if self.request.user.is_staff and self.action == (
             'update' or 'partial_update' or 'destroy'
         ):
-            return (ModeratorOnly(),)
+            return (StaffOnly(),)
 
         return super().get_permissions()
 
@@ -172,10 +185,10 @@ class CommentViewSet(ModelViewSet):
 
             return (AllowAny(),)
 
-        if self.request.user.is_moderator and self.action == (
+        if self.request.user.is_staff and self.action == (
             'update' or 'partial_update' or 'destroy'
         ):
-            return (ModeratorOnly(),)
+            return (StaffOnly(),)
 
         return super().get_permissions()
 

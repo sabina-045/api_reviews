@@ -14,12 +14,12 @@ class AuthorOrAuthenticatedOrReadOnly(BasePermission):
         return obj.author == request.user or request.user.is_admin
 
 
-class ModeratorOnly(BasePermission):
+class StaffOnly(BasePermission):
     """Разрешение модератору на изменеие или удаление
     комментариев или отзывов."""
     def has_permission(self, request, view):
 
-        return request.user.is_moderator
+        return request.user.is_staff
 
 
 class ReadOrAdminOnly(BasePermission):
