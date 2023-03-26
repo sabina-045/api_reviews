@@ -21,24 +21,11 @@ class StaffOnly(BasePermission):
 
         return request.user.is_staff
 
-'''
-class ReadOrAdminOnly(BasePermission):
-    """Доступ админу к действиям над объектом."""
-    def has_permission(self, request, view):
-
-        return request.method in SAFE_METHODS
-
-    def has_object_permission(self, request, view, obj):
-
-        return request.user.is_admin
-'''
 
 class ReadOrAdminOnly(BasePermission):
+"""Доступ админу к действиям над объектом."""
     def has_permission(self, request, view):
         return (request.method in SAFE_METHODS
                 or (request.user.is_authenticated and (
                     request.user.is_admin or request.user.is_superuser)))
     
-# переписал, сделал так: сейф методы или (и дальше двойное условие
-# пользователь должен быть авторизован (чтоб через апи создавать изменять и удалять)
-# и при этом иметь статус админа или суперюзера)
