@@ -1,5 +1,5 @@
 from django.contrib.auth.models import AbstractUser, UserManager
-from django.core.validators import MinLengthValidator
+from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 
 USER = 'user'
@@ -18,7 +18,15 @@ class CustomUser(AbstractUser):
         verbose_name='Имя пользователя',
         max_length=150,
         unique=True,
-        validators=[MinLengthValidator(5, message='Не менее 5 символов')])
+        # validators=[MinLengthValidator(5, message='Не менее 5 символов')])
+        validators=[
+            RegexValidator(
+                regex=r'^(?!me$)[\w]+$',
+                message='Юзер не должен быть "me"',),
+            MinLengthValidator(5, message='Не менее 5 символов')
+        ],
+        
+    )
     email = models.EmailField(
         verbose_name='Адрес электронной почты',
         max_length=254,
@@ -45,12 +53,20 @@ class CustomUser(AbstractUser):
         default=USER,
         error_messages={'role': 'Неверная роль'}
     )
+    confirmation_code = models.CharField(
+        verbose_name='Код подтверждения',
+        max_length=100,
+        null=True
+    )
 
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'username'
-    # REQUIRED_FIELDS = ['username']
+    # REQUIRED_FIELDS = ['email']
+    # USERNAME_FIELDS = 'username'
 
-    objects = UserManager()
+    # EMAIL_FIELD = 'email'
+    # USERNAME_FIELD = 'username'
+    # # REQUIRED_FIELDS = ['username']
+
+    # objects = UserManager()
 
     @property
     def is_user(self):
@@ -71,6 +87,13 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+
+    # constraints = [
+    #         models.CheckConstraint(
+    #             check=~models.Q(username__iexact="me"),
+    #             name="username_is_not_me"
+    #         )
+    #     ]
 
     def __str__(self):
         return f'{self.username}, {self.email}'

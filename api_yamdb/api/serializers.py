@@ -14,7 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ['password', 'role']
+        read_only_fields = ['password', ]
         validators = [
             UniqueTogetherValidator(
                 queryset=CustomUser.objects.all(),
@@ -106,3 +106,19 @@ class CommentSerializer(ModelSerializer):
         model = Comment
         fields = ('__all__')
         read_only_fields = ('pub_date', 'review',)
+
+
+class SignUpSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254, required=True)
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+    )
+
+    def validate(self, data):
+        if data['username'].lower() == 'me':
+            raise serializers.ValidationError('Нельзя использовать логин me')
+        return data
+
+    class Meta:
+        fields = ('username', 'email')
