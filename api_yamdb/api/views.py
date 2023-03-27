@@ -29,6 +29,7 @@ from users.models import CustomUser
 
 class UserViewSet(ModelViewSet):
     """CRUD for user."""
+    http_method_names = ['get', 'post', 'patch', 'delete',]
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = (AdminOnly,)
