@@ -1,4 +1,6 @@
+from django.db import IntegrityError
 import datetime as dt
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -10,14 +12,14 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
-
 from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
-                             ReadOrAdminOnly, AdminOnly)
+                           ReadOrAdminOnly, AdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
     GenreSerializer, ReviewSerializer, TitleReadOnlySerializer,
-    TitleSerializer, UserSerializer, TokenSerializer)
+    TitleSerializer, UserSerializer, TokenSerializer, SignUpSerializer)
 from .mixins import ListCreateDestroyViewSet
 from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
@@ -25,11 +27,11 @@ from users.models import CustomUser
 
 class UserViewSet(ModelViewSet):
     """CRUD for user."""
+    http_method_names = ['get', 'post', 'patch', 'delete',]
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = (AdminOnly,)
     pagination_class = PageNumberPagination
-    http_method_names = ['get', 'post', 'patch', 'delete',]
     filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ['username']
     lookup_field = 'username'
@@ -40,7 +42,7 @@ class UserViewSet(ModelViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
-        """Дополнительный маршрут 'me'."""
+        """Дополнительный маршрут 'me', для редактирования текущим пользователем своих данных."""
         user = request.user
         if request.method == 'GET':
             serializer = self.get_serializer(user)
@@ -57,21 +59,28 @@ class UserViewSet(ModelViewSet):
 @permission_classes([AllowAny, ])
 def send_confirmation_code(request):
     """Отправка письма с кодом подтверждения."""
-    serializer = UserSerializer(data=request.data)
+    # serializer = UserSerializer(data=request.data)
+    serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    user = get_object_or_404(
-        CustomUser,
-        username=serializer.validated_data["username"]
-    )
-    confirmation_code = default_token_generator.make_token(user)
+    username = serializer.validated_data.get('username')
+    email = serializer.validated_data.get('email')
+    try:
+        user, _ = CustomUser.objects.get_or_create(
+            username=username,
+            email=email
+        )
+    except IntegrityError as error:
+        raise ValidationError(
+            ('Ошибка при попытке создать новую запись '
+                f'в базе с username={username}, email={email}')
+        ) from error
+    user.confirmation_code = default_token_generator.make_token(user)
+    user.save()
     send_mail(
-        subject="YaMDb регистрация",
-        message=f"YaMDb код подтверждения: {confirmation_code}",
-        from_email=None,
-        recipient_list=[user.email],
+        'Код подверждения', user.confirmation_code,
+        settings.DEFAULT_FROM_EMAIL, (email, ), fail_silently=False
     )
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -198,3 +207,4 @@ class CommentViewSet(ModelViewSet):
 
         return serializer.save(author=self.request.user,
                                review_id=review.id)
+    
