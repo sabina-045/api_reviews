@@ -8,13 +8,13 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-#from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
-                             ReadOrAdminOnly)
+                             ReadOrAdminOnly, AdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
     GenreSerializer, ReviewSerializer, TitleReadOnlySerializer,
     TitleSerializer, UserSerializer, TokenSerializer)
@@ -27,10 +27,10 @@ class UserViewSet(ModelViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (ReadOrAdminOnly,)
+    permission_classes = (AdminOnly,)
     pagination_class = PageNumberPagination
     http_method_names = ['get', 'post', 'patch', 'delete',]
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ['username']
     lookup_field = 'username'
 
@@ -122,6 +122,9 @@ class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all().annotate(Avg('reviews__score'))
     serializer_class = TitleSerializer
     permission_classes = [ReadOrAdminOnly, ]
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, )
+    #filterset_fields = ('genre',)
+
 
     def get_serializer_class(self):
         if self.action in ("retrieve", "list"):

@@ -15,7 +15,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('id', 'username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ['password', 'role']
+        read_only_fields = ['password',]
         validators = [
             UniqueTogetherValidator(
                 queryset=CustomUser.objects.all(),
