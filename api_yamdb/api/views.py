@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from .permissions import (AuthorOrAuthenticatedOrReadOnly, StaffOnly,
+from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
                              ReadOrAdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
     GenreSerializer, ReviewSerializer, TitleReadOnlySerializer,
@@ -22,7 +22,7 @@ from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 
 
-class UserViewSet(ListCreateDestroyViewSet):
+class UserViewSet(ModelViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
@@ -148,10 +148,10 @@ class ReviewViewSet(ModelViewSet):
 
             return (AllowAny(),)
 
-        if self.request.user.is_staff and self.action == (
-            'update' or 'partial_update' or 'destroy'
+        if self.action in (
+            'update', 'partial_update', 'destroy'
         ):
-            return (StaffOnly(),)
+            return (AuthorOrModeratorORAdminOnly(),)
 
         return super().get_permissions()
 
@@ -162,6 +162,10 @@ class ReviewViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        # if Review.objects.filter(author=self.request.user,
+        #                        title_id=title.id).exists:
+
+        #     return ValueError('Вы не можете оставить больше одного отзыва.')
 
         return serializer.save(author=self.request.user,
                                title_id=title.id)
@@ -182,10 +186,10 @@ class CommentViewSet(ModelViewSet):
 
             return (AllowAny(),)
 
-        if self.request.user.is_staff and self.action == (
-            'update' or 'partial_update' or 'destroy'
+        if self.action in (
+            'update', 'partial_update', 'destroy'
         ):
-            return (StaffOnly(),)
+            return (AuthorOrModeratorORAdminOnly(),)
 
         return super().get_permissions()
 
