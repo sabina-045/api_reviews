@@ -10,9 +10,10 @@ from users.models import CustomUser
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор кастомного юзера"""
+
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'first_name',
+        fields = ('id', 'username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
         read_only_fields = ['password', 'role']
         validators = [
@@ -89,7 +90,6 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
 class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(
         read_only=True, slug_field='username',
-        # default=serializers.CurrentUserDefault()
     )
 
     class Meta:

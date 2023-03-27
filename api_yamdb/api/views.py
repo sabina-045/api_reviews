@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
-
+from rest_framework import exceptions
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters
 from rest_framework.decorators import action, api_view, permission_classes
@@ -11,6 +11,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+#from django_filters.rest_framework import DjangoFilterBackend
 
 from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
                              ReadOrAdminOnly)
@@ -26,17 +27,12 @@ class UserViewSet(ModelViewSet):
     """CRUD for user."""
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAdminUser,)
+    permission_classes = (ReadOrAdminOnly,)
     pagination_class = PageNumberPagination
-    # filter_backends = [DjangoFilterBackend, SearchFilter]
+    http_method_names = ['get', 'post', 'patch', 'delete',]
+    filter_backends = (filters.SearchFilter,)
     search_fields = ['username']
     lookup_field = 'username'
-
-    def perform_create(self, serializer):
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
         detail=False,
@@ -162,10 +158,6 @@ class ReviewViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        # if Review.objects.filter(author=self.request.user,
-        #                        title_id=title.id).exists:
-
-        #     return ValueError('Вы не можете оставить больше одного отзыва.')
 
         return serializer.save(author=self.request.user,
                                title_id=title.id)
