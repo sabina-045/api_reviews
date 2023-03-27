@@ -10,7 +10,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
@@ -29,7 +29,6 @@ from users.models import CustomUser
 
 class UserViewSet(ModelViewSet):
     """CRUD for user."""
-    # http_method_names = ('get', 'post', 'delete',)
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
     permission_classes = (AdminOnly,)
@@ -38,19 +37,13 @@ class UserViewSet(ModelViewSet):
     search_fields = ['username']
     lookup_field = 'username'
 
-    # def perform_create(self, serializer):
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-
     @action(
         detail=False,
         methods=['get', 'put', 'patch'],
         permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
-        """Дополнительный маршрут 'me'."""
+        """Дополнительный маршрут 'me', для редактирования текущим пользователем своих данных."""
         user = request.user
         if request.method == 'GET':
             serializer = self.get_serializer(user)
@@ -88,18 +81,6 @@ def send_confirmation_code(request):
         'Код подверждения', user.confirmation_code,
         settings.DEFAULT_FROM_EMAIL, (email, ), fail_silently=False
     )
-    # serializer.save()
-    # user = get_object_or_404(
-    #     CustomUser,
-    #     username=serializer.validated_data["username"]
-    # )
-    # confirmation_code = default_token_generator.make_token(user)
-    # send_mail(
-    #     subject="YaMDb регистрация",
-    #     message=f"YaMDb код подтверждения: {confirmation_code}",
-    #     from_email=None,
-    #     recipient_list=[user.email],
-    # )
     return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 @api_view(["POST"])

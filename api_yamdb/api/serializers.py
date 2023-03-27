@@ -2,7 +2,7 @@ import datetime as dt
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Genre, Category, Title, Review, Comment
 from users.models import CustomUser
@@ -25,9 +25,24 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         """Валидация юзернейма."""
         if value.lower() == 'me':
-            raise serializers.ValidationError(
-                f'Имя {value} не подходит.')
+            raise serializers.ValidationError('Нельзя использовать логин "me"')
         return value
+
+
+class SignUpSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254, required=True)
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+    )
+
+    def validate(self, data):
+        if data['username'].lower() == 'me':
+            raise serializers.ValidationError('Нельзя использовать логин "me"')
+        return data
+
+    class Meta:
+        fields = ('username', 'email')
 
 
 class TokenSerializer(serializers.Serializer):
@@ -106,19 +121,3 @@ class CommentSerializer(ModelSerializer):
         model = Comment
         fields = ('__all__')
         read_only_fields = ('pub_date', 'review',)
-
-
-class SignUpSerializer(serializers.Serializer):
-    email = serializers.EmailField(max_length=254, required=True)
-    username = serializers.RegexField(
-        regex=r'^[\w.@+-]+$',
-        max_length=150,
-    )
-
-    def validate(self, data):
-        if data['username'].lower() == 'me':
-            raise serializers.ValidationError('Нельзя использовать логин me')
-        return data
-
-    class Meta:
-        fields = ('username', 'email')

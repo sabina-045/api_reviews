@@ -18,7 +18,6 @@ class CustomUser(AbstractUser):
         verbose_name='Имя пользователя',
         max_length=150,
         unique=True,
-        # validators=[MinLengthValidator(5, message='Не менее 5 символов')])
         validators=[
             RegexValidator(
                 regex=r'^(?!me$)[\w]+$',
@@ -59,15 +58,6 @@ class CustomUser(AbstractUser):
         null=True
     )
 
-    # REQUIRED_FIELDS = ['email']
-    # USERNAME_FIELDS = 'username'
-
-    # EMAIL_FIELD = 'email'
-    # USERNAME_FIELD = 'username'
-    # # REQUIRED_FIELDS = ['username']
-
-    # objects = UserManager()
-
     @property
     def is_user(self):
         """Проверка. Пользователь 'user'?"""
@@ -88,12 +78,6 @@ class CustomUser(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    # constraints = [
-    #         models.CheckConstraint(
-    #             check=~models.Q(username__iexact="me"),
-    #             name="username_is_not_me"
-    #         )
-    #     ]
 
     def __str__(self):
         return f'{self.username}, {self.email}'
