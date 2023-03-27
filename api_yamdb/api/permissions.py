@@ -23,7 +23,7 @@ class StaffOnly(BasePermission):
 
 
 class ReadOrAdminOnly(BasePermission):
-"""Доступ админу к действиям над объектом."""
+    """Доступ админу к действиям над объектом."""
     def has_permission(self, request, view):
         return (request.method in SAFE_METHODS
                 or (request.user.is_authenticated and (

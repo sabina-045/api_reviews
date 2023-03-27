@@ -2,7 +2,7 @@ import datetime as dt
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
+from rest_framework.validators import UniqueTogetherValidator
 
 from reviews.models import Genre, Category, Title, Review, Comment
 from users.models import CustomUser
