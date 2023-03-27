@@ -11,7 +11,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django_filters.rest_framework import DjangoFilterBackend
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet, AllValuesFilter, CharFilter, BaseInFilter
 
 from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
                              ReadOrAdminOnly, AdminOnly)
@@ -114,6 +114,16 @@ class CategoryViewSet(ListCreateDestroyViewSet):
     filter_backends = (filters.SearchFilter, )
     search_fields = ('name', )
 
+class CharFilterChar(BaseInFilter, CharFilter):
+    pass
+
+class TitleFilter(FilterSet):
+    genre = CharFilterChar(field_name='genre__slug',)
+
+    class Meta:
+        model = Title
+        fields = ['genre',]
+
 
 class TitleViewSet(ModelViewSet):
     """Получение списка произведений.
@@ -123,7 +133,7 @@ class TitleViewSet(ModelViewSet):
     serializer_class = TitleSerializer
     permission_classes = [ReadOrAdminOnly, ]
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, )
-    #filterset_fields = ('genre',)
+    filter_class = TitleFilter
 
 
     def get_serializer_class(self):

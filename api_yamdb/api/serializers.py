@@ -67,13 +67,13 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
-    def validate(self, data):
-        year_now = dt.datetime.now().year
-        if data['year'] > year_now:
-            raise serializers.ValidationError(
-                'Нельзя публиковать не вышедшие произведения'
-            )
-        return data
+    # def validate(self, data):
+    #     year_now = dt.datetime.now().year
+    #     if data['year'] > year_now:
+    #         raise serializers.ValidationError(
+    #             'Нельзя публиковать не вышедшие произведения'
+    #         )
+    #     return data
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
