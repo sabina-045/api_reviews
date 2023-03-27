@@ -206,3 +206,4 @@ class CommentViewSet(ModelViewSet):
 
         return serializer.save(author=self.request.user,
                                review_id=review.id)
+    
