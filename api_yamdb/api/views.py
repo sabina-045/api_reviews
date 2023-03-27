@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
-
+from rest_framework import exceptions
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters
 from rest_framework.decorators import action, api_view, permission_classes
@@ -15,10 +15,8 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
-
-from .permissions import (AuthorOrAuthenticatedOrReadOnly, StaffOnly,
-                             ReadOrAdminOnly, AdminOnly)
+from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
+                           ReadOrAdminOnly, AdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
     GenreSerializer, ReviewSerializer, TitleReadOnlySerializer,
     TitleSerializer, UserSerializer, TokenSerializer, SignUpSerializer)
@@ -34,7 +32,7 @@ class UserViewSet(ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (AdminOnly,)
     pagination_class = PageNumberPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter,)
     search_fields = ['username']
     lookup_field = 'username'
 
@@ -133,6 +131,9 @@ class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all().annotate(Avg('reviews__score'))
     serializer_class = TitleSerializer
     permission_classes = [ReadOrAdminOnly, ]
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, )
+    #filterset_fields = ('genre',)
+
 
     def get_serializer_class(self):
         if self.action in ("retrieve", "list"):
@@ -155,10 +156,10 @@ class ReviewViewSet(ModelViewSet):
 
             return (AllowAny(),)
 
-        if self.request.user.is_staff and self.action == (
-            'update' or 'partial_update' or 'destroy'
+        if self.action in (
+            'update', 'partial_update', 'destroy'
         ):
-            return (StaffOnly(),)
+            return (AuthorOrModeratorORAdminOnly(),)
 
         return super().get_permissions()
 
@@ -189,10 +190,10 @@ class CommentViewSet(ModelViewSet):
 
             return (AllowAny(),)
 
-        if self.request.user.is_staff and self.action == (
-            'update' or 'partial_update' or 'destroy'
+        if self.action in (
+            'update', 'partial_update', 'destroy'
         ):
-            return (StaffOnly(),)
+            return (AuthorOrModeratorORAdminOnly(),)
 
         return super().get_permissions()
 
