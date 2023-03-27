@@ -162,10 +162,10 @@ class ReviewViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
-        # if Review.objects.filter(author=self.request.user,
-        #                        title_id=title.id).exists:
+        if Review.objects.filter(author=self.request.user,
+                               title_id=title.id).exists:
 
-        #     return ValueError('Вы не можете оставить больше одного отзыва.')
+            return ValueError('Вы не можете оставить больше одного отзыва.')
 
         return serializer.save(author=self.request.user,
                                title_id=title.id)
