@@ -88,13 +88,23 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(ModelSerializer):
     author = SlugRelatedField(
-        read_only=True, slug_field='username'
+        read_only=True, slug_field='username',
+        # default=serializers.CurrentUserDefault()
     )
 
     class Meta:
         model = Review
         fields = '__all__'
         read_only_fields = ('pub_date', 'title',)
+
+    def create(self, validated_data):
+        try:
+            review = Review.objects.create(**validated_data)
+        except:
+            raise serializers.ValidationError(
+                {'detail': 'Вы можете оставить только один отзыв.'})
+
+        return review
 
 
 class CommentSerializer(ModelSerializer):
