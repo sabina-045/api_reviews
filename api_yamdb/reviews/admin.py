@@ -11,9 +11,9 @@ class GenreTitleInline(admin.TabularInline):
 
 class TitleAdmin(admin.ModelAdmin):
     inlines = [GenreTitleInline]
-    list_display = ('id', 'description', 'name', 'year', 'rating', 'category',) # get_genres
+    list_display = ('id', 'description', 'name', 'year', 'rating', 'category',)
 
-    def get_genres(self, obj): # добавляю get_genres в лист дисплей и не работает
+    def get_genres(self, obj):
         return '\n'.join([g.genre for g in obj.genre.all()])
 
 

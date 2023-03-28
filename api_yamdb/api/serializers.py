@@ -1,21 +1,19 @@
 import datetime as dt
-from rest_framework import serializers
-from rest_framework.serializers import ModelSerializer
-from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
-from reviews.models import Genre, Category, Title, Review, Comment
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
+
+from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор кастомного юзера"""
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name',
+        fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ['password',]
+        read_only_fields = ('password',)
         validators = [
             UniqueTogetherValidator(
                 queryset=CustomUser.objects.all(),
@@ -24,11 +22,27 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
     def validate_username(self, value):
-        """Валидация юзернейма."""
         if value.lower() == 'me':
-            raise serializers.ValidationError(
-                f'Имя {value} не подходит.')
+            raise serializers.ValidationError('Нельзя использовать логин "me"')
+
         return value
+
+
+class SignUpSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254, required=True)
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+    )
+
+    class Meta:
+        fields = ('username', 'email')
+
+    def validate(self, data):
+        if data['username'].lower() == 'me':
+            raise serializers.ValidationError('Нельзя использовать логин "me"')
+
+        return data
 
 
 class TokenSerializer(serializers.Serializer):
@@ -54,26 +68,26 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
-        queryset = Genre.objects.all(),
-        many = True,
+        queryset=Genre.objects.all(),
+        many=True,
         slug_field='slug',
     )
     category = serializers.SlugRelatedField(
-        queryset = Category.objects.all(),
+        queryset=Category.objects.all(),
         many=False,
         slug_field='slug',
     )
+
     class Meta:
         model = Title
         fields = '__all__'
 
-    # def validate(self, data):
-    #     year_now = dt.datetime.now().year
-    #     if data['year'] > year_now:
-    #         raise serializers.ValidationError(
-    #             'Нельзя публиковать не вышедшие произведения'
-    #         )
-    #     return data
+    def validate_year(self, value):
+        year = dt.date.today().year
+        if not value <= year:
+            raise serializers.ValidationError('Проверьте дату!')
+
+        return value
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
@@ -82,13 +96,14 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
     rating = serializers.IntegerField(
         source='reviews__score__avg', read_only=True,
     )
+
     class Meta:
         model = Title
         fields = '__all__'
 
 
-class ReviewSerializer(ModelSerializer):
-    author = SlugRelatedField(
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
         read_only=True, slug_field='username',
     )
 
@@ -102,17 +117,17 @@ class ReviewSerializer(ModelSerializer):
             review = Review.objects.create(**validated_data)
         except:
             raise serializers.ValidationError(
-                {'detail': 'Вы можете оставить только один отзыв.'})
+                'Вы можете оставить только один отзыв к произведению.')
 
         return review
 
 
-class CommentSerializer(ModelSerializer):
-    author = SlugRelatedField(
+class CommentSerializer(serializers.ModelSerializer):
+    author = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
 
     class Meta:
         model = Comment
-        fields = ('__all__')
+        fields = '__all__'
         read_only_fields = ('pub_date', 'review',)

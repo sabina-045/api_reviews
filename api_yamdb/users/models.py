@@ -1,5 +1,5 @@
-from django.contrib.auth.models import AbstractUser, UserManager
-from django.core.validators import MinLengthValidator
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 
 USER = 'user'
@@ -18,7 +18,14 @@ class CustomUser(AbstractUser):
         verbose_name='Имя пользователя',
         max_length=150,
         unique=True,
-        validators=[MinLengthValidator(5, message='Не менее 5 символов')])
+        validators=[
+            RegexValidator(
+                regex=r'^(?!me$)[\w]+$',
+                message='Юзер не должен быть "me"',),
+            MinLengthValidator(5, message='Не менее 5 символов')
+        ],
+
+    )
     email = models.EmailField(
         verbose_name='Адрес электронной почты',
         max_length=254,
@@ -45,12 +52,11 @@ class CustomUser(AbstractUser):
         default=USER,
         error_messages={'role': 'Неверная роль'}
     )
-
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'username'
-    #REQUIRED_FIELDS = ['username', 'email',]
-
-    objects = UserManager()
+    confirmation_code = models.CharField(
+        verbose_name='Код подтверждения',
+        max_length=100,
+        null=True
+    )
 
     @property
     def is_user(self):
@@ -66,7 +72,6 @@ class CustomUser(AbstractUser):
     def is_admin(self):
         """Проверка. Пользователь 'admin'?"""
         return self.role == ADMIN
-
 
     class Meta:
         verbose_name = 'Пользователь'

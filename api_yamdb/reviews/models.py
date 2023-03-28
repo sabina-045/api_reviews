@@ -40,6 +40,7 @@ class Category(models.Model):
         verbose_name='URL',
         max_length=50,
     )
+
     def __str__(self) -> str:
         return self.name
 
@@ -90,7 +91,7 @@ class Title(models.Model):
 
 class GenreTitle(models.Model):
     """Класс связ. жанры и произв."""
-    title= models.ForeignKey(
+    title = models.ForeignKey(
         Title,
         on_delete=models.SET_NULL,
         null=True,
@@ -111,7 +112,9 @@ class Review(models.Model):
         User, on_delete=models.CASCADE, related_name='reviews')
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews')
-    score = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1), MaxValueValidator(10)])
+    score = models.PositiveIntegerField(default=10,
+                                        validators=[MinValueValidator(1),
+                                                    MaxValueValidator(10)])
     text = models.TextField()
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
@@ -119,7 +122,7 @@ class Review(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['author', 'title',],
+                fields=['author', 'title', ],
                 name='author_title'
             )
         ]
