@@ -115,7 +115,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         try:
             review = Review.objects.create(**validated_data)
-        except:
+        except Exception:
             raise serializers.ValidationError(
                 'Вы можете оставить только один отзыв к произведению.')
 
