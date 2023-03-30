@@ -17,8 +17,8 @@ from reviews.models import Category, Genre, Review, Title
 from users.models import CustomUser
 from .filters import TitleFilter
 from .mixins import ListCreateDestroyViewSet
-from .permissions import (AdminOnly, AuthorOrAuthenticatedOrReadOnly,
-                          AuthorOrModeratorORAdminOnly, ReadOrAdminOnly)
+from .permissions import (AdminOnly, AuthorModeratorAdminOrReadOnly,
+                          ReadOrAdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer, SignUpSerializer,
                           TitleReadOnlySerializer, TitleSerializer,
@@ -93,14 +93,14 @@ def get_jwt_token(request):
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(
         CustomUser,
-        username=serializer.validated_data["username"]
+        username=serializer.validated_data['username']
     )
     if default_token_generator.check_token(
-        user, serializer.validated_data["confirmation_code"]
+        user, serializer.validated_data['confirmation_code']
     ):
         token = AccessToken.for_user(user)
 
-        return Response({"token": str(token)}, status=status.HTTP_200_OK)
+        return Response({'token': str(token)}, status=status.HTTP_200_OK)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -110,10 +110,6 @@ class GenreViewSet(ListCreateDestroyViewSet):
     Создание, удаление отдельных объектов админом."""
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (ReadOrAdminOnly, )
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter, )
-    search_fields = ('name', )
 
 
 class CategoryViewSet(ListCreateDestroyViewSet):
@@ -121,24 +117,20 @@ class CategoryViewSet(ListCreateDestroyViewSet):
     Создание, удаление отдельных объектов админом."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (ReadOrAdminOnly, )
-    lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter, )
-    search_fields = ('name', )
 
 
 class TitleViewSet(ModelViewSet):
     """Получение списка произведений.
     Создание, редактирование,
     удаление отдельной записи о произвед."""
-    queryset = Title.objects.all().annotate(Avg('reviews__score'))
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     serializer_class = TitleSerializer
     permission_classes = [ReadOrAdminOnly, ]
     filter_backends = (DjangoFilterBackend, filters.SearchFilter, )
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
-        if self.action in ("retrieve", "list"):
+        if self.action in ('retrieve', 'list'):
 
             return TitleReadOnlySerializer
 
@@ -150,20 +142,14 @@ class ReviewViewSet(ModelViewSet):
     Получение, создание, редактирование,
     удаление отдельного отзыва."""
     serializer_class = ReviewSerializer
-    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
+    permission_classes = (AuthorModeratorAdminOrReadOnly,)
 
     def get_permissions(self):
         """Разрешение анонимам получать информацию
-        об отдельном объекте. Разрешение модератору или админу
-        удалять или редактировать отд. объект."""
+        об отдельном объекте."""
         if self.action == 'retrieve':
 
             return (AllowAny(),)
-
-        if self.action in (
-            'update', 'partial_update', 'destroy'
-        ):
-            return (AuthorOrModeratorORAdminOnly(),)
 
         return super().get_permissions()
 
@@ -184,20 +170,14 @@ class CommentViewSet(ModelViewSet):
     Получение, создание, редактирование,
     удаление отдельного комментария."""
     serializer_class = CommentSerializer
-    permission_classes = (AuthorOrAuthenticatedOrReadOnly,)
+    permission_classes = (AuthorModeratorAdminOrReadOnly,)
 
     def get_permissions(self):
         """Разрешение анонимам получать информацию
-        об отдельном объекте.Разрешение модератору
-        удалять или редактировать отд. объект."""
+        об отдельном объекте."""
         if self.action == 'retrieve':
 
             return (AllowAny(),)
-
-        if self.action in (
-            'update', 'partial_update', 'destroy'
-        ):
-            return (AuthorOrModeratorORAdminOnly(),)
 
         return super().get_permissions()
 

@@ -1,30 +1,40 @@
 import datetime as dt
 
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import CustomUser
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор кастомного юзера"""
+    email = serializers.EmailField(
+        max_length=254,
+        required=True,
+        validators=[
+            UniqueValidator(queryset=CustomUser.objects.all())
+        ]
+    )
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+        validators=[
+            UniqueValidator(queryset=CustomUser.objects.all())
+        ]
+    )
 
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ('password',)
-        validators = [
-            UniqueTogetherValidator(
-                queryset=CustomUser.objects.all(),
-                fields=['username', 'email']
-            )
-        ]
+        read_only_fields = ('password', )
 
     def validate_username(self, value):
+        """Валидация юзернейма."""
         if value.lower() == 'me':
             raise serializers.ValidationError('Нельзя использовать логин "me"')
-
         return value
 
 
@@ -54,7 +64,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        fields = ('name', 'slug',)
+        fields = ('name', 'slug', )
         lookup_field = 'slug'
 
 
@@ -62,7 +72,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ('name', 'slug',)
+        fields = ('name', 'slug', )
         lookup_field = 'slug'
 
 
@@ -94,7 +104,7 @@ class TitleReadOnlySerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
     rating = serializers.IntegerField(
-        source='reviews__score__avg', read_only=True,
+        read_only=True
     )
 
     class Meta:
@@ -112,14 +122,25 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('pub_date', 'title',)
 
-    def create(self, validated_data):
-        try:
-            review = Review.objects.create(**validated_data)
-        except Exception:
-            raise serializers.ValidationError(
-                'Вы можете оставить только один отзыв к произведению.')
+    def validate(self, data):
+        request = self.context['request']
+        title_id = self.context.get('view').kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if request.method == 'POST':
+            if Review.objects.filter(
+                author=request.user, title=title
+            ).exists():
+                raise serializers.ValidationError(
+                    'Вы можете оставить только один отзыв к произведению.')
 
-        return review
+        return data
+
+    def validate_score(self, value):
+        if not 1 <= value <= 10:
+            raise serializers.ValidationError(
+                'Оценка может быть только в диапазоне от 1 до 10')
+
+        return value
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -130,4 +151,4 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
-        read_only_fields = ('pub_date', 'review',)
+        read_only_fields = ('pub_date', 'review', )
