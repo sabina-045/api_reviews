@@ -1,8 +1,6 @@
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
-
-User = get_user_model()
+from users.models import CustomUser
 
 
 class Genre(models.Model):
@@ -108,7 +106,7 @@ class GenreTitle(models.Model):
 class Review(models.Model):
     """Класс отзывов к произведению."""
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
+        CustomUser, on_delete=models.CASCADE, related_name='reviews')
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews')
     score = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1), MaxValueValidator(10)])
@@ -128,7 +126,7 @@ class Review(models.Model):
 class Comment(models.Model):
     """Класс комментариев к отзыву."""
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments')
+        CustomUser, on_delete=models.CASCADE, related_name='comments')
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()

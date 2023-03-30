@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
+from .filters import TitleFilter
 from .permissions import (AuthorOrAuthenticatedOrReadOnly, AuthorOrModeratorORAdminOnly,
                            ReadOrAdminOnly, AdminOnly)
 from .serializers import (CategorySerializer, CommentSerializer,
@@ -59,7 +60,6 @@ class UserViewSet(ModelViewSet):
 @permission_classes([AllowAny, ])
 def send_confirmation_code(request):
     """Отправка письма с кодом подтверждения."""
-    # serializer = UserSerializer(data=request.data)
     serializer = SignUpSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data.get('username')
@@ -131,8 +131,8 @@ class TitleViewSet(ModelViewSet):
     queryset = Title.objects.all().annotate(Avg('reviews__score'))
     serializer_class = TitleSerializer
     permission_classes = [ReadOrAdminOnly, ]
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter, )
-    #filterset_fields = ('genre',)
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter, ) 
+    filterset_class = TitleFilter
 
 
     def get_serializer_class(self):
@@ -207,4 +207,3 @@ class CommentViewSet(ModelViewSet):
 
         return serializer.save(author=self.request.user,
                                review_id=review.id)
-    

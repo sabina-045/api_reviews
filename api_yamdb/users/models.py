@@ -18,13 +18,6 @@ class CustomUser(AbstractUser):
         verbose_name='Имя пользователя',
         max_length=150,
         unique=True,
-        validators=[
-            RegexValidator(
-                regex=r'^(?!me$)[\w]+$',
-                message='Юзер не должен быть "me"',),
-            MinLengthValidator(5, message='Не менее 5 символов')
-        ],
-        
     )
     email = models.EmailField(
         verbose_name='Адрес электронной почты',
@@ -71,7 +64,7 @@ class CustomUser(AbstractUser):
     @property
     def is_admin(self):
         """Проверка. Пользователь 'admin'?"""
-        return self.role == ADMIN
+        return self.role == ADMIN or self.is_superuser or self.is_staff
 
 
     class Meta:

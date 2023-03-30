@@ -2,7 +2,7 @@ import datetime as dt
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator
+from rest_framework.validators import UniqueTogetherValidator, UniqueValidator
 
 from reviews.models import Genre, Category, Title, Review, Comment
 from users.models import CustomUser
@@ -10,18 +10,26 @@ from users.models import CustomUser
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор кастомного юзера"""
+    email = serializers.EmailField(
+        max_length=254,
+        required=True,
+        validators=[
+            UniqueValidator(queryset=CustomUser.objects.all())
+        ]
+    )
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+        validators=[
+            UniqueValidator(queryset=CustomUser.objects.all())
+        ]
+    )
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name',
+        fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ['password',]
-        validators = [
-            UniqueTogetherValidator(
-                queryset=CustomUser.objects.all(),
-                fields=['username', 'email']
-            )
-        ]
+        read_only_fields = ['password', ]
 
     def validate_username(self, value):
         """Валидация юзернейма."""
@@ -82,13 +90,11 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
-    def validate(self, data):
-        year_now = dt.datetime.now().year
-        if data['year'] > year_now:
-            raise serializers.ValidationError(
-                'Нельзя публиковать не вышедшие произведения'
-            )
-        return data
+def validate_year(self, value):
+        year = dt.date.today().year
+        if not value <= year:
+            raise serializers.ValidationError('Проверьте дату!')
+        return value
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
