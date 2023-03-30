@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'first_name',
+        fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
         read_only_fields = ['password',]
         validators = [
@@ -26,9 +26,24 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         """Валидация юзернейма."""
         if value.lower() == 'me':
-            raise serializers.ValidationError(
-                f'Имя {value} не подходит.')
+            raise serializers.ValidationError('Нельзя использовать логин "me"')
         return value
+
+
+class SignUpSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=254, required=True)
+    username = serializers.RegexField(
+        regex=r'^[\w.@+-]+$',
+        max_length=150,
+    )
+
+    def validate(self, data):
+        if data['username'].lower() == 'me':
+            raise serializers.ValidationError('Нельзя использовать логин "me"')
+        return data
+
+    class Meta:
+        fields = ('username', 'email')
 
 
 class TokenSerializer(serializers.Serializer):
@@ -67,20 +82,21 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
-    # def validate(self, data):
-    #     year_now = dt.datetime.now().year
-    #     if data['year'] > year_now:
-    #         raise serializers.ValidationError(
-    #             'Нельзя публиковать не вышедшие произведения'
-    #         )
-    #     return data
+    def validate_year(self, value):
+        year = dt.date.today().year
+        if not value <= year:
+            raise serializers.ValidationError('Проверьте дату!')
+        return value
 
 
 class TitleReadOnlySerializer(serializers.ModelSerializer):
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
+    # rating = serializers.IntegerField(
+    #     source='reviews__score__avg', read_only=True,
+    # )
     rating = serializers.IntegerField(
-        source='reviews__score__avg', read_only=True,
+        read_only=True
     )
     class Meta:
         model = Title

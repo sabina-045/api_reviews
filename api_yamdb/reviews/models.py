@@ -21,6 +21,11 @@ class Genre(models.Model):
         max_length=50,
     )
 
+    class Meta:
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
+        ordering = ['name']
+
     def __str__(self) -> str:
         return self.name
 
@@ -40,6 +45,12 @@ class Category(models.Model):
         verbose_name='URL',
         max_length=50,
     )
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        ordering = ['name']
+
     def __str__(self) -> str:
         return self.name
 
@@ -58,7 +69,7 @@ class Title(models.Model):
         Genre,
         blank=False,
         through='GenreTitle',
-        related_name='genre',
+        related_name='genres',
         verbose_name='Жанр произведения',
     )
     name = models.CharField(
@@ -67,7 +78,7 @@ class Title(models.Model):
         blank=False,
         null=False,
     )
-    year = models.IntegerField(
+    year = models.PositiveIntegerField(
         'Год произведения',
         blank=False,
         null=False,
@@ -78,11 +89,11 @@ class Title(models.Model):
         null=True,
         max_length=256
     )
-    rating = models.IntegerField(
-        'Оценка произведения',
-        null=True,
-        default=0,
-    )
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
+        ordering = ['name']
 
     def __str__(self) -> str:
         return self.name

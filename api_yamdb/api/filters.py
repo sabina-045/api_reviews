@@ -7,8 +7,11 @@ class SlugFilterInFilter(filter.BaseInFilter, filter.CharFilter):
 
 
 class TitleFilter(filter.FilterSet):
-    genre = SlugFilterInFilter(fields_name='genre__slug', lookup_expr='in')
+    genre = SlugFilterInFilter(field_name='genre__slug', lookup_expr='in')
+    category = SlugFilterInFilter(field_name='category__slug', lookup_expr='in')
+    name = SlugFilterInFilter(field_name='name', lookup_expr='in')
+    year = filter.BaseInFilter(field_name='year',lookup_expr='in')
 
     class Meta:
         Model = Title
-        fields = ['genre']
+        fields = ['genre', 'category', 'year', 'name']
