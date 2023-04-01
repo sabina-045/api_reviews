@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db import IntegrityError
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,7 +8,6 @@ from rest_framework import filters, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -65,16 +63,10 @@ def send_confirmation_code(request):
     serializer.is_valid(raise_exception=True)
     username = serializer.validated_data.get('username')
     email = serializer.validated_data.get('email')
-    try:
-        user, _ = CustomUser.objects.get_or_create(
-            username=username,
-            email=email
-        )
-    except IntegrityError as error:
-        raise ValidationError(
-            ('Ошибка при попытке создать новую запись '
-                f'в базе с username={username}, email={email}')
-        ) from error
+    user, _ = CustomUser.objects.get_or_create(
+        username=username,
+        email=email
+    )
     user.confirmation_code = default_token_generator.make_token(user)
     user.save()
     send_mail(

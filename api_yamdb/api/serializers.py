@@ -50,7 +50,22 @@ class SignUpSerializer(serializers.Serializer):
 
     def validate(self, data):
         if data['username'].lower() == 'me':
-            raise serializers.ValidationError('Нельзя использовать логин "me"')
+            raise serializers.ValidationError(
+                'Нельзя использовать логин "me"'
+            )
+        username = data['username']
+        email = data['email']
+        if not CustomUser.objects.filter(
+            username=username, email=email
+        ).exists():
+            if CustomUser.objects.filter(email=email).exists():
+                raise serializers.ValidationError(
+                    'Используйте другой email.')
+            if CustomUser.objects.filter(username=username).exists():
+                raise serializers.ValidationError(
+                    'Используйте другой username.')
+
+            return data
 
         return data
 
@@ -94,7 +109,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def validate_year(self, value):
         year = dt.date.today().year
-        if not value <= year:
+        if not 0 < value <= year:
             raise serializers.ValidationError('Проверьте дату!')
 
         return value
