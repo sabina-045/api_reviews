@@ -49,12 +49,12 @@ class SignUpSerializer(serializers.Serializer):
         fields = ('username', 'email')
 
     def validate(self, data):
-        if data['username'].lower() == 'me':
+        username = data['username']
+        email = data['email']
+        if username.lower() == 'me':
             raise serializers.ValidationError(
                 'Нельзя использовать логин "me"'
             )
-        username = data['username']
-        email = data['email']
         if not CustomUser.objects.filter(
             username=username, email=email
         ).exists():
