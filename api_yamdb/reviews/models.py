@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-from users.models import CustomUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 
-User = get_user_model()
+from users.models import CustomUser
+from .validators import validate_year
 
 
 class Genre(models.Model):
@@ -82,6 +82,7 @@ class Title(models.Model):
         'Год произведения',
         blank=False,
         null=False,
+        validators=[validate_year]
     )
     description = models.CharField(
         'Описание произведения',
@@ -122,7 +123,11 @@ class Review(models.Model):
         CustomUser, on_delete=models.CASCADE, related_name='reviews')
     title = models.ForeignKey(
         Title, on_delete=models.CASCADE, related_name='reviews')
-    score = models.PositiveIntegerField(default=10)
+    score = models.PositiveIntegerField(default=10,
+                                        validators=[
+                                            MinValueValidator(1),
+                                            MaxValueValidator(10)
+                                        ])
     text = models.TextField()
     pub_date = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
