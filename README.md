@@ -5,20 +5,26 @@ API Reviews - API для сервиса публикации отзывов на
 # api_reviews
 >API Reviews - это API без лишних деталей. Благодаря этому его легко освоить и доработать. Через приложение уже можно читать информацию о разных произведениях, оставлять отзывы и комментарии к отзывам. Эту основу легко расширить, добавляя новые возможности.
 
+### Технологии:
++ Django==3.2.10
++ djangorestframework==3.12.4
++ PyJWT==2.1.0
++ djangorestframework-simplejwt==5.2.2
+
 #### Как запустить проект:
 
 + клонируем репозиторий `git clone`
-`https://github.com/sabina-045/api_yamdb.git`
+`https://github.com/sabina-045/api_reviews.git`
 + переходим в него `cd api_yamdb`
-    + разворачиваем виртуальное окружение
+    + разворачиваем виртуальное окружение:
     `python3 -m venv env` (Windows: `python -m venv env`)
-    + активируем его
+    + активируем его:
     `source env/bin/activate` (Windows: `source env/scripts/activate`)
-    + устанавливаем зависимости из файла requirements.txt
+    + устанавливаем зависимости из файла requirements.txt:
     `pip install -r requirements.txt`
-+ выполняем миграции
++ выполняем миграции:
 `python3 manage.py migrate` (Windows: `python manage.py migrate`)
-+ запускаем проект
++ запускаем проект:
 `python3 manage.py runserver` (Windows: `python manage.py runserver).
 И вперед!
 
